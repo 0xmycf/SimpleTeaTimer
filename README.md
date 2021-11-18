@@ -1,6 +1,6 @@
 # SimpleTeaTimer
-A simple CLI Tea Timer, so you know how long to brew those leaves!
-
+A simple CLI Tea Timer, so you know how long to brew those leaves!  
+It does not account for non-linear brewing.
 
 Recipes from here: [Meileaf](https://meileaf.com)  
 He published a free guide once, if you can't find it and are interested feel free to msg me.
