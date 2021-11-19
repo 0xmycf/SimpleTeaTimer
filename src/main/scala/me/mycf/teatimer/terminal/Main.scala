@@ -31,8 +31,8 @@ object Main {
 
   def decidingWhatToDo(args: Array[String]): Unit = {
     args.size match {
-      case 1 => if args(0).toLowerCase == "-teas" then startAllOverAgain() else brewTheTea(args(0), continueAndLastRound = { () => Tuple2(true, 0) })
-      case 3 => brewTheCustomTea(args(0), args(1), args(2), continueAndLastRound = { () => Tuple2(true, 0) })
+      case 1 => if args(0).toLowerCase == "-teas" then startAllOverAgain() else brewTheTea(args(0), continueAndLastRound = { () => 0 })
+      case 3 => brewTheCustomTea(args(0), args(1), args(2), continueAndLastRound = { () => 0 })
       case _ => goodBye()
     }
   }
@@ -47,32 +47,28 @@ object Main {
     System.exit(0)
   }
 
-  // Bool -> should continue y/n; Int -> time of last round
-  def brewTheTea(tea: String, continueAndLastRound: () => Tuple2[Boolean, Int]): Unit = {
-    val (continue, lastInfusion) = continueAndLastRound()
-    if !continue then untilNextTime()
-    val oldTime = mapTeaToTime(tea, lastRound = lastInfusion)
+  def untilNextTime0(): Int = {
+    untilNextTime(); 0
+  }
+
+  def brewTheTea(tea: String, continueAndLastRound: () => Int): Unit = {
+    val oldTime = mapTeaToTime(tea, lastRound = continueAndLastRound())
     timerIO(oldTime)
 
     brewTheTea(tea, { () =>
-      Tuple2(customReadBoolean(
-        s"Would you like to continue brewing for ${mapTeaToTime(tea, lastRound = oldTime)} seconds?"
-      ), oldTime)
+      if customReadBoolean(s"Would you like to continue brewing for ${mapTeaToTime(tea, lastRound = oldTime)} seconds?")
+      then oldTime else untilNextTime0()
     })
   }
 
-  def brewTheCustomTea(tea: String, customTime: String, customIncrease: String, continueAndLastRound: () => Tuple2[Boolean, Int]): Unit = {
-    val (continue, lastInfusion) = continueAndLastRound()
-    if !continue then untilNextTime()
-    val oldTime = mapTeaToTime(tea, customTime = customTime.toInt, customIncrease = customIncrease.toInt, lastRound = lastInfusion)
+  def brewTheCustomTea(tea: String, customTime: String, customIncrease: String, continueAndLastRound: () => Int): Unit = {
+    val oldTime = mapTeaToTime(tea, customTime = customTime.toInt, customIncrease = customIncrease.toInt, lastRound = continueAndLastRound())
     timerIO(oldTime)
 
     brewTheCustomTea(tea, customTime, customIncrease, { () =>
-      Tuple2(customReadBoolean(
-        s"Would you like to continue brewing for ${mapTeaToTime(tea, lastRound = oldTime, customTime = customTime.toInt, customIncrease = customIncrease.toInt)} seconds?"
-      ), oldTime)
+      if customReadBoolean(s"Would you like to continue brewing for ${mapTeaToTime(tea, lastRound = oldTime, customTime = customTime.toInt, customIncrease = customIncrease.toInt)} seconds?")
+        then oldTime else untilNextTime0()
     })
-
   }
 
   def mapTeaToTime(tea: String, lastRound: Int = 0, customTime: Int = 0, customIncrease: Int = 0): Int = {
