@@ -7,8 +7,11 @@ He published a free guide once, if you can't find it and are interested feel fre
 
 # Teas (In 功夫 Gung Fu style)
 
+Run with `-teas` to get an overview.
+
 - black
-- puerhr
+- puerh ripe
+- puerh raw
 - green
 - yellow
 - white
