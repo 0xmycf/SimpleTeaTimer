@@ -256,3 +256,6 @@ $RECYCLE.BIN/
 # End of https://www.toptal.com/developers/gitignore/api/scala,sbt,java,kotlin,intellij+all,visualstudiocode,macos,windows,linux,git
 
 .bsp
+*.sh
+*.diff
+*.patch

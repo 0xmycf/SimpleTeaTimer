@@ -4,8 +4,11 @@ import scala.io.StdIn
 
 object Main {
   def main(args: Array[String]): Unit = {
-    if !customReadBoolean("Would you like to start now?") then untilNextTime()
-    decidingWhatToDo(args)
+    if !customReadBoolean("Would you like to start now?")
+    then
+      untilNextTime()
+    else
+      decidingWhatToDo(args)
   }
 
   def startAllOverAgain(): Unit = {
@@ -48,7 +51,8 @@ object Main {
   }
 
   def untilNextTime0(): Int = {
-    untilNextTime(); 0
+    untilNextTime();
+    0
   }
 
   def brewTheTea(tea: String, continueAndLastRound: () => Int): Unit = {
@@ -67,7 +71,7 @@ object Main {
 
     brewTheCustomTea(tea, customTime, customIncrease, { () =>
       if customReadBoolean(s"Would you like to continue brewing for ${mapTeaToTime(tea, lastRound = oldTime, customTime = customTime.toInt, customIncrease = customIncrease.toInt)} seconds?")
-        then oldTime else untilNextTime0()
+      then oldTime else untilNextTime0()
     })
   }
 
