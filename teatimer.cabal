@@ -37,7 +37,6 @@ library
 executable teatimer-exe
   main-is: Main.hs
   other-modules:
-      MainRefactor
       Paths_teatimer
   hs-source-dirs:
       app
