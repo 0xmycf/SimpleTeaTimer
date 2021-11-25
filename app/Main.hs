@@ -3,6 +3,8 @@ module Main where
 import Control.Concurrent (threadDelay)
 import GHC.Unicode (toLower)
 import System.Exit (exitFailure, exitSuccess)
+import System.Process (callCommand)
+import Data.List.Split -- scuffed
 
 data Tea
   = White
@@ -13,12 +15,14 @@ data Tea
   | PuerhRipe
   | PuerhStrip
   | Black
+  | Custom Int Int -- 1. base infusion time 2. increase every infusion
   | NoTea
   deriving (Show)
 
 waitConstant :: Int
 waitConstant = 1000000
 
+getTea :: IO Tea
 getTea = getInput >>= mapStringToTea
 
 main :: IO ()
@@ -41,24 +45,27 @@ getInput = do
   getLine
 
 mapStringToTea :: String -> IO Tea
-mapStringToTea "white"        = return White
-mapStringToTea "weiß"         = return White
-mapStringToTea "green"        = return Green
-mapStringToTea "grün"         = return Green
-mapStringToTea "yellow"       = return Yellow
-mapStringToTea "gelb"         = return Yellow
-mapStringToTea "oolongstrip"  = return OolongStrip
-mapStringToTea "oolongs"      = return OolongStrip
-mapStringToTea "oolong"       = return OolongStrip
-mapStringToTea "oolongball"   = return OolongBall
-mapStringToTea "oolongb"      = return OolongBall
-mapStringToTea "puerhripe"    = return PuerhRipe
-mapStringToTea "puerhr"       = return PuerhRipe
-mapStringToTea "puerhstrip"   = return PuerhStrip
-mapStringToTea "puerhs"       = return PuerhStrip
-mapStringToTea "black"        = return Black
-mapStringToTea "schwarz"      = return Black
-mapStringToTea _              = return NoTea
+mapStringToTea "white"                          = return White
+mapStringToTea "weiß"                           = return White
+mapStringToTea "green"                          = return Green
+mapStringToTea "grün"                           = return Green
+mapStringToTea "yellow"                         = return Yellow
+mapStringToTea "gelb"                           = return Yellow
+mapStringToTea "oolongstrip"                    = return OolongStrip
+mapStringToTea "oolongs"                        = return OolongStrip
+mapStringToTea "oolong"                         = return OolongStrip
+mapStringToTea "oolongball"                     = return OolongBall
+mapStringToTea "oolongb"                        = return OolongBall
+mapStringToTea "puerhripe"                      = return PuerhRipe
+mapStringToTea "puerhr"                         = return PuerhRipe
+mapStringToTea "puerhstrip"                     = return PuerhStrip
+mapStringToTea "puerhs"                         = return PuerhStrip
+mapStringToTea "black"                          = return Black
+mapStringToTea "schwarz"                        = return Black
+mapStringToTea ('c':'u':'s':'t':'o':'m':rest)   = do
+  let times = (drop 1 . splitOn " ") rest -- scuffed -> What if custom has empty inputs?!
+  return $ Custom (read $ head times) (read $ last times)
+mapStringToTea _                                = return NoTea
 
 mapTeaToTime :: Tea -> Int -> IO (Int, Tea)
 mapTeaToTime tea i = do
@@ -78,6 +85,7 @@ brewTheTea :: (Int, Tea) -> IO (Int, Tea)
 brewTheTea (waitTime, tea) = do
   moreTeaValidation waitTime
   threadDelay $ waitTime * waitConstant
+  callCommand "say 'Enjoy!'"
   putStrLn "Enjoy!"
   return (waitTime, tea)
 
@@ -90,6 +98,7 @@ calcInfusion OolongBall 0   = 25
 calcInfusion PuerhRipe 0    = 10
 calcInfusion PuerhStrip 0   = 10
 calcInfusion Black 0        = 10
+calcInfusion (Custom x _) 0 = x -- custom time is missing 
 calcInfusion NoTea 0        = 0
 calcInfusion White x        = x + 10
 calcInfusion Green x        = x + 3
@@ -99,6 +108,7 @@ calcInfusion OolongBall x   = x + 5
 calcInfusion PuerhRipe x    = x + 5
 calcInfusion PuerhStrip x   = x + 3
 calcInfusion Black x        = x + 5
+calcInfusion (Custom _ y) x = x + y -- custom inf time missing
 calcInfusion NoTea x        = x + 0
 
 moreTeaValidation :: Int -> IO ()
@@ -116,7 +126,7 @@ moreTeaValidation s = do
     _         -> goodBye "I hope you enjoyed your tea!"
 
 teaInfo :: IO ()
-teaInfo =  
+teaInfo =
   putStr "|The following teas are available:\n\
           \|kind           gr/100ml  time      temp\n\
           \|white          3.5/4gr   20/+10s    85C\n\
