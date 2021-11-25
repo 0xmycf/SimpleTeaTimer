@@ -2,6 +2,6 @@
 
 # TODO 
 
-- [ ] Tea overview
+- [x] Tea overview
 - [ ] Custom teas / infusion time
-- [ ] On wrong input start all over again
+- [x] On wrong input start all over again

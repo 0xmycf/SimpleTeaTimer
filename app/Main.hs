@@ -27,6 +27,9 @@ main = do
   teapot (0, tea)
 
 teapot :: (Int, Tea) -> IO ()
+teapot (i, NoTea) = do
+  teaInfo
+  main
 teapot (i, tea) = mapTeaToTime tea i >>= brewTheTea >>= teapot
 
 toLowerCase :: IO String -> IO String
@@ -72,11 +75,11 @@ goodBye msg = do
   exitSuccess
 
 brewTheTea :: (Int, Tea) -> IO (Int, Tea)
-brewTheTea (wait, tea) = do
-  moreTeaValidation $ show wait
-  threadDelay $ wait * waitConstant
+brewTheTea (waitTime, tea) = do
+  moreTeaValidation waitTime
+  threadDelay $ waitTime * waitConstant
   putStrLn "Enjoy!"
-  return (wait, tea)
+  return (waitTime, tea)
 
 calcInfusion :: Tea -> Int -> Int
 calcInfusion White 0        = 20
@@ -98,8 +101,9 @@ calcInfusion PuerhStrip x   = x + 3
 calcInfusion Black x        = x + 5
 calcInfusion NoTea x        = x + 0
 
-moreTeaValidation :: String -> IO ()
-moreTeaValidation seconds = do
+moreTeaValidation :: Int -> IO ()
+moreTeaValidation s = do
+  let seconds = show s
   putStrLn $ "Continue brewing for " ++ seconds ++ " seconds?"
   val <- getLine
   case val of
@@ -110,3 +114,19 @@ moreTeaValidation seconds = do
     "ja"      -> putStrLn $ "Brewing the tea for " ++ seconds ++ " seconds!"
     "j"       -> putStrLn $ "Brewing the tea for " ++ seconds ++ " seconds!"
     _         -> goodBye "I hope you enjoyed your tea!"
+
+teaInfo :: IO ()
+teaInfo =  
+  putStr "|The following teas are available:\n\
+          \|kind           gr/100ml  time      temp\n\
+          \|white          3.5/4gr   20/+10s    85C\n\
+          \|green          3/3.5gr   15/+3s     80C\n\
+          \|yellow         3.5/4gr   15/+5s     85C\n\
+          \|oolong_strip   4.5/5gr   20/+5s     99C\n\
+          \|oolong_ball    6/6.5gr   25/+5s     99C\n\
+          \|black          4/4.5gr   10-15/+5s  99C\n\
+          \|puerh_ripe     5gr       10/+3s     99C\n\
+          \|puerh_raw      5gr       10/+5s     99C\n\
+          \|custom         Enter first first-infusion time and then the added time per infusion.\n\
+          \|\n\
+          \|Keep in mind that those values are made for 功夫 style brewing!\n"
