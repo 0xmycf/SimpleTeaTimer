@@ -24,3 +24,7 @@ German names work too.
 I use some funny command to announce that the tea is done, but this is a mac command, so idk what happens on Windows/Linux.
 
 Needless to say, this is one of my few projects that I did to try out another language.
+
+# Scala
+
+Check out the Scala version [here](https://github.com/0xmycf/SimpleTeaTimer/tree/main)
