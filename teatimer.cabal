@@ -25,7 +25,7 @@ source-repository head
 
 library
   exposed-modules:
-      Lib
+      GongDaoBei
   other-modules:
       Paths_teatimer
   hs-source-dirs:

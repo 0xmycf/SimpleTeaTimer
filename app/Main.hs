@@ -2,9 +2,9 @@ module Main where
 
 import Control.Concurrent (threadDelay)
 import GHC.Unicode (toLower)
-import System.Exit (exitFailure, exitSuccess)
 import System.Process (callCommand)
 import Data.List.Split ( splitOn )
+import GongDaoBei ( goodBye, waitConstant )
 
 data Tea
   = White
@@ -18,9 +18,6 @@ data Tea
   | Custom Int Int -- 1. base infusion time 2. increase every infusion
   | NoTea
   deriving (Show)
-
-waitConstant :: Int
-waitConstant = 1000000
 
 getTea :: IO Tea
 getTea = getInput >>= mapStringToTea
@@ -36,9 +33,6 @@ teapot (i, NoTea) = do
   main
 teapot (i, tea) = mapTeaToTime tea i >>= brewTheTea >>= teapot
 
-toLowerCase :: IO String -> IO String
-toLowerCase = (fmap . map) toLower
-
 getInput :: IO String
 getInput = do
   putStrLn "Enter the tea."
@@ -47,14 +41,10 @@ getInput = do
     c : s -> if map toLower c == "custom"
       then do
         case s of
-          [] -> repeatInput
-          _ : _ : _ -> return input
-          str : ss -> repeatInput
-      else if map toLower c == "leave" then goodBye "I just heated the water..." else return c
+          _ : _ : _ -> return $ map toLower input
+          _ -> do {putStrLn "Please enter a base infusion time as well as an increase in every step (Eg. custom 2 3)."; getInput}
+      else if map toLower c == "leave" then goodBye "I just heated the water..." else return $ map toLower c
     [] -> goodBye "Please enter any tea..."
-  where
-    repeatInput = do {putStrLn "Please enter a base infusion time as well as an increase in every step (Eg. custom 2 3)."; getInput}
-
 
 mapStringToTea :: String -> IO Tea
 mapStringToTea "white"                          = return White
@@ -85,14 +75,6 @@ mapTeaToTime tea i = do
     NoTea -> goodBye "Please enter a valid tea you doofus"
     _ -> return (calcInfusion tea i, tea)
 
-intToString :: Int -> IO String
-intToString = return . show
-
-goodBye :: String -> IO b
-goodBye msg = do
-  putStrLn msg
-  exitSuccess
-
 brewTheTea :: (Int, Tea) -> IO (Int, Tea)
 brewTheTea (waitTime, tea) = do
   moreTeaValidation waitTime
@@ -110,7 +92,7 @@ calcInfusion OolongBall 0   = 25
 calcInfusion PuerhRipe 0    = 10
 calcInfusion PuerhStrip 0   = 10
 calcInfusion Black 0        = 10
-calcInfusion (Custom x _) 0 = x 
+calcInfusion (Custom x _) 0 = x
 calcInfusion NoTea 0        = 0
 calcInfusion White x        = x + 10
 calcInfusion Green x        = x + 3
