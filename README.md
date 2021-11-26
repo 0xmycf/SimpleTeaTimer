@@ -1,4 +1,4 @@
-# SimpleTeaTimer
+# SimpleTeaTimer - Scala Version!
 A simple CLI Tea Timer, so you know how long to brew those leaves!  
 It does not account for non-linear brewing.
 
@@ -10,8 +10,8 @@ He published a free guide once, if you can't find it and are interested feel fre
 Run with `-teas` to get an overview.
 
 - black
-- puerh ripe
-- puerh raw
+- puerh_ripe
+- puerh_raw
 - green
 - yellow
 - white
@@ -24,3 +24,7 @@ German names work too.
 I use some funny command to announce that the tea is done, but this is a mac command, so idk what happens on Windows/Linux.
 
 Needless to say, this is one of my few projects that I did to try out another language.
+
+# Haskell
+
+Check out the Haskell version [here](https://github.com/0xmycf/SimpleTeaTimer/tree/haskell)
