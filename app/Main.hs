@@ -4,7 +4,7 @@ import Control.Concurrent (threadDelay)
 import GHC.Unicode (toLower)
 import System.Exit (exitFailure, exitSuccess)
 import System.Process (callCommand)
-import Data.List.Split -- scuffed
+import Data.List.Split ( splitOn )
 
 data Tea
   = White
@@ -42,7 +42,19 @@ toLowerCase = (fmap . map) toLower
 getInput :: IO String
 getInput = do
   putStrLn "Enter the tea."
-  getLine
+  input <- getLine
+  case (filter (/="") . splitOn " ") input of
+    c : s -> if map toLower c == "custom"
+      then do
+        case s of
+          [] -> repeatInput
+          _ : _ : _ -> return input
+          str : ss -> repeatInput
+      else if map toLower c == "leave" then goodBye "I just heated the water..." else return c
+    [] -> goodBye "Please enter any tea..."
+  where
+    repeatInput = do {putStrLn "Please enter a base infusion time as well as an increase in every step (Eg. custom 2 3)."; getInput}
+
 
 mapStringToTea :: String -> IO Tea
 mapStringToTea "white"                          = return White
@@ -62,9 +74,9 @@ mapStringToTea "puerhstrip"                     = return PuerhStrip
 mapStringToTea "puerhs"                         = return PuerhStrip
 mapStringToTea "black"                          = return Black
 mapStringToTea "schwarz"                        = return Black
-mapStringToTea ('c':'u':'s':'t':'o':'m':rest)   = do
-  let times = (drop 1 . splitOn " ") rest -- scuffed -> What if custom has empty inputs?!
-  return $ Custom (read $ head times) (read $ last times)
+mapStringToTea ('c':'u':'s':'t':'o':'m':rest)   = return $ Custom ((read . head) times) ((read . last) times)
+  where
+    times = (filter (/="") . splitOn " ") rest
 mapStringToTea _                                = return NoTea
 
 mapTeaToTime :: Tea -> Int -> IO (Int, Tea)
@@ -98,7 +110,7 @@ calcInfusion OolongBall 0   = 25
 calcInfusion PuerhRipe 0    = 10
 calcInfusion PuerhStrip 0   = 10
 calcInfusion Black 0        = 10
-calcInfusion (Custom x _) 0 = x -- custom time is missing 
+calcInfusion (Custom x _) 0 = x 
 calcInfusion NoTea 0        = 0
 calcInfusion White x        = x + 10
 calcInfusion Green x        = x + 3
@@ -108,7 +120,7 @@ calcInfusion OolongBall x   = x + 5
 calcInfusion PuerhRipe x    = x + 5
 calcInfusion PuerhStrip x   = x + 3
 calcInfusion Black x        = x + 5
-calcInfusion (Custom _ y) x = x + y -- custom inf time missing
+calcInfusion (Custom _ y) x = x + y
 calcInfusion NoTea x        = x + 0
 
 moreTeaValidation :: Int -> IO ()

@@ -1,0 +1,10 @@
+cradle:
+  cabal:
+    - path: "src"
+      component: "lib:teatimer"
+
+    - path: "app/Main.hs"
+      component: "teatimer:exe:teatimer-exe"
+
+    - path: "app/Paths_teatimer.hs"
+      component: "teatimer:exe:teatimer-exe"
