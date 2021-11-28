@@ -6,7 +6,6 @@ import System.Process (callCommand)
 import Data.List.Split ( splitOn )
 import GongDaoBei ( goodBye, waitConstant )
 import System.IO (putStr, hPutStr, stderr)
-import Text.Printf (printf)
 
 data Tea
   = White
