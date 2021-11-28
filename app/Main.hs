@@ -5,6 +5,8 @@ import GHC.Unicode (toLower)
 import System.Process (callCommand)
 import Data.List.Split ( splitOn )
 import GongDaoBei ( goodBye, waitConstant )
+import System.IO (putStr, hPutStr, stderr)
+import Text.Printf (printf)
 
 data Tea
   = White
@@ -80,10 +82,19 @@ mapTeaToTime tea i = do
 brewTheTea :: (Int, Tea) -> IO (Int, Tea)
 brewTheTea (waitTime, tea) = do
   moreTeaValidation waitTime
-  threadDelay $ waitTime * waitConstant
+  updateTxt waitTime
   callCommand "say 'Enjoy!'"
-  putStrLn "Enjoy!"
   return (waitTime, tea)
+  where
+    updateTxt :: Int -> IO ()
+    updateTxt w = mapM_ progress [w, w-1..0]
+
+    progress :: Int -> IO ()
+    progress 0 = hPutStr stderr $ "\r\ESC[K" ++ "Enjoy!\n"
+    progress s = do
+      hPutStr stderr $ "\r\ESC[K" ++ "Brewing the tea for " ++ show s ++ " seconds!"
+      threadDelay $ 1 * waitConstant
+    -- source : https://stackoverflow.com/questions/8953636/simple-progress-indication-in-console
 
 calcInfusion :: Tea -> Int -> Int
 calcInfusion White 0        = 20
@@ -113,12 +124,12 @@ moreTeaValidation s = do
   putStrLn $ "Continue brewing for " ++ seconds ++ " seconds?"
   val <- getLine
   case val of
-    "yes"     -> putStrLn $  "Brewing the tea for " ++ seconds ++ " seconds!"
-    "y"       -> putStrLn $ "Brewing the tea for " ++ seconds ++ " seconds!"
-    "yea"     -> putStrLn $ "Brewing the tea for " ++ seconds ++ " seconds!"
-    "yeah"    -> putStrLn $ "Brewing the tea for " ++ seconds ++ " seconds!"
-    "ja"      -> putStrLn $ "Brewing the tea for " ++ seconds ++ " seconds!"
-    "j"       -> putStrLn $ "Brewing the tea for " ++ seconds ++ " seconds!"
+    "yes"     -> return ()
+    "y"       -> return ()
+    "yea"     -> return ()
+    "yeah"    -> return ()
+    "ja"      -> return ()
+    "j"       -> return ()
     _         -> goodBye "I hope you enjoyed your tea!"
 
 teaInfo :: IO ()
