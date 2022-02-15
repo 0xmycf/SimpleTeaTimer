@@ -1,11 +1,14 @@
 module Main where
 
-import Control.Concurrent (threadDelay)
-import GHC.Unicode (toLower)
-import System.Process (callCommand)
-import Data.List.Split ( splitOn )
-import GongDaoBei ( goodBye, waitConstant )
-import System.IO (putStr, hPutStr, stderr)
+import           Control.Concurrent (threadDelay)
+import           Data.List.Split    (splitOn)
+import           GHC.Unicode        (toLower)
+import           GongDaoBei         (goodBye, waitConstant)
+import           System.IO          (hPutStr, putStr, stderr)
+import           System.Process     (callCommand)
+
+type BaseInfusion        = Int
+type IncreasePerInfusion = Int
 
 data Tea
   = White
@@ -16,23 +19,21 @@ data Tea
   | PuerhRipe
   | PuerhStrip
   | Black
-  | Custom Int Int -- 1. base infusion time 2. increase every infusion
-  | NoTea
+  | Custom BaseInfusion IncreasePerInfusion
   deriving (Show)
 
-getTea :: IO Tea
-getTea = getInput >>= mapStringToTea
+getTea :: IO (Maybe Tea)
+getTea = mapStringToTea <$> getInput
 
 main :: IO ()
 main = do
   tea <- getTea
-  teapot (0, tea)
+  case tea of
+    Nothing   -> teaInfo >> main
+    Just tea' -> teapot tea' 0
 
-teapot :: (Int, Tea) -> IO ()
-teapot (i, NoTea) = do
-  teaInfo
-  main
-teapot (i, tea) = mapTeaToTime tea i >>= brewTheTea >>= teapot
+teapot :: Tea -> Int -> IO ()
+teapot tea i = brewTheTea tea i >>= uncurry teapot
 
 getInput :: IO String
 getInput = do
@@ -40,50 +41,48 @@ getInput = do
   input <- getLine
   case (filter (/="") . splitOn " ") input of
     c : s -> if map toLower c == "custom"
-      then do
-        case s of
-          _ : _ : _ -> return $ map toLower input
-          _ -> do {putStrLn "Please enter a base infusion time as well as an increase in every step (Eg. custom 2 3)."; getInput}
-      else if map toLower c == "leave" then goodBye "I just heated the water..." else return $ map toLower c
+                then case s of
+                    _ : _ : _ -> pure . map toLower $ input
+                    _         -> putStrLn "Please enter a base infusion time as well as an increase in every step (Eg. custom 2 3)."
+                                 >> getInput
+                else if map toLower c == "leave"
+                       then goodBye "I just heated the water..."
+                       else pure . map toLower $ c
+
     [] -> goodBye "Please enter any tea..."
 
-mapStringToTea :: String -> IO Tea
-mapStringToTea "white"                          = return White
-mapStringToTea "weiß"                           = return White
-mapStringToTea "green"                          = return Green
-mapStringToTea "grün"                           = return Green
-mapStringToTea "yellow"                         = return Yellow
-mapStringToTea "gelb"                           = return Yellow
-mapStringToTea "oolongstrip"                    = return OolongStrip
-mapStringToTea "oolong_strip"                   = return OolongStrip
-mapStringToTea "oolongs"                        = return OolongStrip
-mapStringToTea "oolong"                         = return OolongStrip
-mapStringToTea "oolongball"                     = return OolongBall
-mapStringToTea "oolong_ball"                    = return OolongBall
-mapStringToTea "oolongb"                        = return OolongBall
-mapStringToTea "puerhripe"                      = return PuerhRipe
-mapStringToTea "puerhr"                         = return PuerhRipe
-mapStringToTea "puerhstrip"                     = return PuerhStrip
-mapStringToTea "puerhs"                         = return PuerhStrip
-mapStringToTea "black"                          = return Black
-mapStringToTea "schwarz"                        = return Black
-mapStringToTea ('c':'u':'s':'t':'o':'m':rest)   = return $ Custom ((read . head) times) ((read . last) times)
+mapStringToTea :: String -> Maybe Tea
+mapStringToTea "white"                          = Just White
+mapStringToTea "weiß"                           = Just White
+mapStringToTea "green"                          = Just Green
+mapStringToTea "grün"                           = Just Green
+mapStringToTea "yellow"                         = Just Yellow
+mapStringToTea "gelb"                           = Just Yellow
+mapStringToTea "oolongstrip"                    = Just OolongStrip
+mapStringToTea "oolong_strip"                   = Just OolongStrip
+mapStringToTea "oolongs"                        = Just OolongStrip
+mapStringToTea "oolong"                         = Just OolongStrip
+mapStringToTea "oolongball"                     = Just OolongBall
+mapStringToTea "oolong_ball"                    = Just OolongBall
+mapStringToTea "oolongb"                        = Just OolongBall
+mapStringToTea "puerhripe"                      = Just PuerhRipe
+mapStringToTea "puerhr"                         = Just PuerhRipe
+mapStringToTea "puerhstrip"                     = Just PuerhStrip
+mapStringToTea "puerhs"                         = Just PuerhStrip
+mapStringToTea "black"                          = Just Black
+mapStringToTea "schwarz"                        = Just Black
+mapStringToTea ('c':'u':'s':'t':'o':'m':rest)   = Just . Custom ((read . head) times) $ (read . last) times
   where
     times = (filter (/="") . splitOn " ") rest
-mapStringToTea _                                = return NoTea
+mapStringToTea _                                = Nothing
 
-mapTeaToTime :: Tea -> Int -> IO (Int, Tea)
-mapTeaToTime tea i = do
-  case tea of
-    NoTea -> goodBye "Please enter a valid tea you doofus"
-    _ -> return (calcInfusion tea i, tea)
-
-brewTheTea :: (Int, Tea) -> IO (Int, Tea)
-brewTheTea (waitTime, tea) = do
-  moreTeaValidation waitTime
-  updateTxt waitTime
+brewTheTea :: Tea -> Int -> IO (Tea, Int)
+brewTheTea tea waitTime = do
+  moreTeaValidation (calcInfusion tea waitTime)
+  updateTxt (calcInfusion tea waitTime)
+  -- mac command, might not work in Windows or Linux
   callCommand "say 'Enjoy!'"
-  return (waitTime, tea)
+  pure (tea, waitTime + 1)
   where
     updateTxt :: Int -> IO ()
     updateTxt w = mapM_ progress [w, w-1..0]
@@ -95,41 +94,29 @@ brewTheTea (waitTime, tea) = do
       threadDelay $ 1 * waitConstant
     -- source : https://stackoverflow.com/questions/8953636/simple-progress-indication-in-console
 
+-- Linear (affine) function to map the time to brewing time
 calcInfusion :: Tea -> Int -> Int
-calcInfusion White 0        = 20
-calcInfusion Green 0        = 15
-calcInfusion Yellow 0       = 15
-calcInfusion OolongStrip 0  = 20
-calcInfusion OolongBall 0   = 25
-calcInfusion PuerhRipe 0    = 10
-calcInfusion PuerhStrip 0   = 10
-calcInfusion Black 0        = 10
-calcInfusion (Custom x _) 0 = x
-calcInfusion NoTea 0        = 0
-calcInfusion White x        = x + 10
-calcInfusion Green x        = x + 3
-calcInfusion Yellow x       = x + 5
-calcInfusion OolongStrip x  = x + 5
-calcInfusion OolongBall x   = x + 5
-calcInfusion PuerhRipe x    = x + 5
-calcInfusion PuerhStrip x   = x + 3
-calcInfusion Black x        = x + 5
-calcInfusion (Custom _ y) x = x + y
-calcInfusion NoTea x        = x + 0
+calcInfusion White x            = x * 10 + 20
+calcInfusion Green x            = x * 3  + 15
+calcInfusion Yellow x           = x * 5  + 15
+calcInfusion OolongStrip x      = x * 5  + 20
+calcInfusion OolongBall x       = x * 5  + 25
+calcInfusion PuerhRipe x        = x * 5  + 10
+calcInfusion PuerhStrip x       = x * 3  + 10
+calcInfusion Black x            = x * 5  + 10
+calcInfusion (Custom inf inc) x = x * inc + inf
+
+yeses :: [[Char]]
+yeses   = ["yes", "y", "yea", "yeah", "ja", "j"]
 
 moreTeaValidation :: Int -> IO ()
 moreTeaValidation s = do
-  let seconds = show s
-  putStrLn $ "Continue brewing for " ++ seconds ++ " seconds?"
+  putStrLn $ "Continue brewing for " ++ show s ++ " seconds?"
   val <- getLine
-  case val of
-    "yes"     -> return ()
-    "y"       -> return ()
-    "yea"     -> return ()
-    "yeah"    -> return ()
-    "ja"      -> return ()
-    "j"       -> return ()
-    _         -> goodBye "I hope you enjoyed your tea!"
+  -- list is short so using a set with Set.member is not necessary
+  if val `elem` yeses
+     then pure ()
+     else goodBye "I hope you enjoyed your tea!"
 
 teaInfo :: IO ()
 teaInfo =
@@ -146,3 +133,4 @@ teaInfo =
           \|custom         Enter first first-infusion time and then the added time per infusion.\n\
           \|\n\
           \|Keep in mind that those values are made for 功夫 style brewing!\n"
+
