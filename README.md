@@ -3,7 +3,7 @@ A simple CLI Tea Timer, so you know how long to brew those leaves!
 It does not account for non-linear brewing.
 
 Recipes from here: [Meileaf](https://meileaf.com)  
-He published a free guide once, if you can't find it and are interested feel free to msg me.
+He published a free guide once, if you can't find it and are interested feel free to open an issueopen an issue.
 
 ## To install
 
@@ -30,10 +30,6 @@ Enter anything (except the teas listed, to see an overview)
 German names work too.
 
 # Windows & Linux
+
 I use some funny command to announce that the tea is done, but this is a mac command, so idk what happens on Windows/Linux.
 
-Needless to say, this is one of my few projects that I did to try out another language.
-
-# Scala
-
-Check out the Scala version [here](https://github.com/0xmycf/SimpleTeaTimer/tree/main)
