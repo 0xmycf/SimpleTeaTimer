@@ -1,11 +1,21 @@
 module Main where
 
-import           Control.Concurrent (threadDelay)
-import           Data.List.Split    (splitOn)
-import           GHC.Unicode        (toLower)
-import           GongDaoBei         (goodBye, waitConstant)
-import           System.IO          (hPutStr, putStr, stderr)
-import           System.Process     (callCommand)
+import           Control.Concurrent         (threadDelay)
+import           Control.Monad.Reader       (MonadIO (liftIO),
+                                             MonadReader (ask),
+                                             ReaderT (runReaderT), guard)
+import           Control.Monad.State        (MonadState (..), StateT, runStateT)
+import           Data.Functor               (($>))
+import           Data.List.Split            (splitOn)
+import           GHC.Unicode                (toLower)
+import           GongDaoBei                 (blacks, goodBye, greens,
+                                             oolongballs, oolongsstrips, printR,
+                                             puerhrripes, puerhrstrips,
+                                             waitConstant, whites, yellows)
+import           System.Process             (callCommand)
+
+import           Control.Monad.State.Strict (State)
+import           System.Exit                (exitFailure)
 
 type BaseInfusion        = Int
 type IncreasePerInfusion = Int
@@ -22,6 +32,8 @@ data Tea
   | Custom BaseInfusion IncreasePerInfusion
   deriving (Show)
 
+type TeaMonad a = ReaderT Tea (StateT Int IO) a
+
 getTea :: IO (Maybe Tea)
 getTea = mapStringToTea <$> getInput
 
@@ -33,7 +45,7 @@ main = do
     Just tea' -> teapot tea' 0
 
 teapot :: Tea -> Int -> IO ()
-teapot tea i = brewTheTea tea i >>= uncurry teapot
+teapot tea i = runStateT (runReaderT brew tea) i $> ()
 
 getInput :: IO String
 getInput = do
@@ -45,52 +57,53 @@ getInput = do
                     _ : _ : _ -> pure . map toLower $ input
                     _         -> putStrLn "Please enter a base infusion time as well as an increase in every step (Eg. custom 2 3)."
                                  >> getInput
-                else if map toLower c == "leave"
-                       then goodBye "I just heated the water..."
-                       else pure . map toLower $ c
-
+                else pure . map toLower $ c
     [] -> goodBye "Please enter any tea..."
 
 mapStringToTea :: String -> Maybe Tea
-mapStringToTea "white"                          = Just White
-mapStringToTea "weiß"                           = Just White
-mapStringToTea "green"                          = Just Green
-mapStringToTea "grün"                           = Just Green
-mapStringToTea "yellow"                         = Just Yellow
-mapStringToTea "gelb"                           = Just Yellow
-mapStringToTea "oolongstrip"                    = Just OolongStrip
-mapStringToTea "oolong_strip"                   = Just OolongStrip
-mapStringToTea "oolongs"                        = Just OolongStrip
-mapStringToTea "oolong"                         = Just OolongStrip
-mapStringToTea "oolongball"                     = Just OolongBall
-mapStringToTea "oolong_ball"                    = Just OolongBall
-mapStringToTea "oolongb"                        = Just OolongBall
-mapStringToTea "puerhripe"                      = Just PuerhRipe
-mapStringToTea "puerhr"                         = Just PuerhRipe
-mapStringToTea "puerhstrip"                     = Just PuerhStrip
-mapStringToTea "puerhs"                         = Just PuerhStrip
-mapStringToTea "black"                          = Just Black
-mapStringToTea "schwarz"                        = Just Black
-mapStringToTea ('c':'u':'s':'t':'o':'m':rest)   = Just . Custom ((read . head) times) $ (read . last) times
-  where
-    times = (filter (/="") . splitOn " ") rest
-mapStringToTea _                                = Nothing
+mapStringToTea ('c':'u':'s':'t':'o':'m':rest)   =
+  let times = filter (/="") . splitOn " " $ rest
+   in Just . Custom ((read . head) times) $ (read . last) times
+mapStringToTea string
+     | string `elem` whites        = Just White
+     | string `elem` blacks        = Just Black
+     | string `elem` greens        = Just Green
+     | string `elem` yellows       = Just Yellow
+     | string `elem` oolongsstrips = Just OolongStrip
+     | string `elem` oolongballs   = Just OolongBall
+     | string `elem` puerhrripes   = Just PuerhRipe
+     | string `elem` puerhrstrips  = Just PuerhStrip
+     | otherwise                   = Nothing
 
-brewTheTea :: Tea -> Int -> IO (Tea, Int)
-brewTheTea tea waitTime = do
-  moreTeaValidation (calcInfusion tea waitTime)
-  updateTxt (calcInfusion tea waitTime)
+brew :: TeaMonad ()
+brew = do
+  tea     <- ask
+  newtime <- incTime
+  liftIO $ moreTeaValidation newtime
+  waitForBrew newtime
+  brew
+
+incTime :: TeaMonad Int
+incTime = do
+  time <- get
+  tea  <- ask
+  let newtime = calcInfusion tea time
+  put (time + 1)
+  return newtime
+
+waitForBrew :: Int -> TeaMonad ()
+waitForBrew time = do
+  liftIO $ updateTxt time
   -- mac command, might not work in Windows or Linux
-  callCommand "say 'Enjoy!'"
-  pure (tea, waitTime + 1)
+  liftIO $ callCommand "say 'Enjoy!'"
   where
     updateTxt :: Int -> IO ()
     updateTxt w = mapM_ progress [w, w-1..0]
 
     progress :: Int -> IO ()
-    progress 0 = hPutStr stderr $ "\r\ESC[K" ++ "Enjoy!\n"
+    progress 0 = printR $ "\r\ESC[K" ++ "Enjoy!\n"
     progress s = do
-      hPutStr stderr $ "\r\ESC[K" ++ "Brewing the tea for " ++ show s ++ " seconds!"
+      printR $ "\r\ESC[K" ++ "Brewing the tea for " ++ show s ++ " seconds!"
       threadDelay $ 1 * waitConstant
     -- source : https://stackoverflow.com/questions/8953636/simple-progress-indication-in-console
 
@@ -106,9 +119,6 @@ calcInfusion PuerhStrip x       = x * 3  + 10
 calcInfusion Black x            = x * 5  + 10
 calcInfusion (Custom inf inc) x = x * inc + inf
 
-yeses :: [[Char]]
-yeses   = ["yes", "y", "yea", "yeah", "ja", "j"]
-
 moreTeaValidation :: Int -> IO ()
 moreTeaValidation s = do
   putStrLn $ "Continue brewing for " ++ show s ++ " seconds?"
@@ -117,6 +127,9 @@ moreTeaValidation s = do
   if val `elem` yeses
      then pure ()
      else goodBye "I hope you enjoyed your tea!"
+   where
+     yeses :: [[Char]]
+     yeses   = ["yes", "y", "yea", "yeah", "ja", "j"]
 
 teaInfo :: IO ()
 teaInfo =
