@@ -32,6 +32,7 @@ dependencies:
 - vty
 - optparse-applicative
 - aeson
+- aeson-pretty
 - microlens-platform
 - microlens-aeson
 - vector
@@ -41,7 +42,7 @@ library:
   source-dirs: src
 
 executables:
-  simple-teatimer-exe:
+  teatimer:
     main:                Main.hs
     source-dirs:         app
     ghc-options:

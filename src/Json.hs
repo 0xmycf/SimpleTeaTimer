@@ -7,14 +7,15 @@ module Json
     , readJSON
     ) where
 
-import qualified Control.Exception      as E
+import qualified Control.Exception        as E
 import           Control.Monad.IO.Class
-import           Data.Aeson             (decodeStrict, encode)
-import qualified Data.ByteString        as BS
-import           System.FilePath        ((</>))
-import           System.IO.Error        (catchIOError, isDoesNotExistError)
+import           Data.Aeson               (decodeStrict)
+import           Data.Aeson.Encode.Pretty
+import qualified Data.ByteString          as BS
+import           System.FilePath          ((</>))
+import           System.IO.Error          (catchIOError, isDoesNotExistError)
 import           UI.UIState
-import           Util                   (getXdgCache)
+import           Util                     (getXdgCache)
 
 -- | appends the TeaSettings to the teas file
 -- Creates the tea file if it does't exist
@@ -37,7 +38,7 @@ writeJSON content = do
     Just ts' ->
       BS.writeFile filepath
         (encodeStrict $ content : ts')
-  where encodeStrict = BS.toStrict . encode
+  where encodeStrict = BS.toStrict . encodePretty
 
 -- | May crash with IOError
 --

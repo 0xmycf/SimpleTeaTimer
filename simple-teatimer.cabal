@@ -45,6 +45,7 @@ library
   ghc-options: -Wall
   build-depends:
       aeson
+    , aeson-pretty
     , base >=4.7 && <5
     , brick
     , bytestring
@@ -62,7 +63,7 @@ library
     , vty
   default-language: GHC2021
 
-executable simple-teatimer-exe
+executable teatimer
   main-is: Main.hs
   other-modules:
       Paths_simple_teatimer
@@ -74,6 +75,7 @@ executable simple-teatimer-exe
   ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N -O2
   build-depends:
       aeson
+    , aeson-pretty
     , base >=4.7 && <5
     , brick
     , bytestring
