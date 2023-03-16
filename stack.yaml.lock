@@ -5,22 +5,15 @@
 
 packages:
 - completed:
-    hackage: split-0.2.3.4@sha256:a6df9c3e806ee7cb50bc980a183fc1156f35022a39430dabac0bf9456fe18a4b,2647
+    hackage: aeson-2.0.3.0@sha256:510c59bece9c6b3d9e999674b869c765cdc3df9f9f90b6871df3e62f87b12fff,5867
     pantry-tree:
-      size: 439
-      sha256: 4e7559f1be32a70cdbdb96d14db768561dd36b8fdff36b3ffac94751f5b5ae6d
+      sha256: bc95efc07f7d7837f3ab689d7af1d0dd4649296f2b54d0ab4e4d25d0cfb50d32
+      size: 38191
   original:
-    hackage: split-0.2.3.4
-- completed:
-    hackage: process-1.6.9.0@sha256:372de796fea9d40e6d02269d5df466c9b8d641f145fad3c1add59db7baeea19e,2576
-    pantry-tree:
-      size: 1211
-      sha256: 9d21df864535dcc65e11fd108c4678fdadf2d53bb9ffd1fda142369c797f31c1
-  original:
-    hackage: process-1.6.9.0
+    hackage: aeson-2.0.3.0
 snapshots:
 - completed:
-    size: 586296
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/18/18.yaml
-    sha256: 63539429076b7ebbab6daa7656cfb079393bf644971156dc349d7c0453694ac2
-  original: lts-18.18
+    sha256: adbc602422dde10cc330175da7de8609e70afc41449a7e2d6e8b1827aa0e5008
+    size: 649342
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/20/11.yaml
+  original: lts-20.11

@@ -1,36 +1,20 @@
 module Main where
 
-import           Control.Concurrent         (threadDelay)
-import           Control.Monad.Reader       (MonadIO (liftIO),
-                                             MonadReader (ask),
-                                             ReaderT (runReaderT), guard)
-import           Control.Monad.State        (MonadState (..), StateT, runStateT)
-import           Data.Functor               (($>))
-import           Data.List.Split            (splitOn)
-import           GHC.Unicode                (toLower)
-import           GongDaoBei                 (blacks, goodBye, greens,
-                                             oolongballs, oolongsstrips, printR,
-                                             puerhrripes, puerhrstrips,
-                                             waitConstant, whites, yellows)
-import           System.Process             (callCommand)
+import           Control.Concurrent   (threadDelay)
+import           Control.Monad.Reader (MonadIO(liftIO), MonadReader(ask),
+                                       ReaderT(runReaderT))
+import           Control.Monad.State  (MonadState(..), StateT, runStateT)
+import           Data.Functor         (($>))
+import           Data.List.Split      (splitOn)
+import           GHC.Unicode          (toLower)
+import           System.Process       (callCommand)
 
-import           Control.Monad.State.Strict (State)
-import           System.Exit                (exitFailure)
+import           BrickImpl
+import           GongDaoBei
+import qualified System.Directory     as D
+import           System.Environment   (getArgs)
+import qualified Util                 as U
 
-type BaseInfusion        = Int
-type IncreasePerInfusion = Int
-
-data Tea
-  = White
-  | Green
-  | Yellow
-  | OolongStrip
-  | OolongBall
-  | PuerhRipe
-  | PuerhStrip
-  | Black
-  | Custom BaseInfusion IncreasePerInfusion
-  deriving (Show)
 
 type TeaMonad a = ReaderT Tea (StateT Int IO) a
 
@@ -39,13 +23,22 @@ getTea = mapStringToTea <$> getInput
 
 main :: IO ()
 main = do
-  tea <- getTea
-  case tea of
+  args <- getArgs
+  cache <- U.getXdgCache
+  D.createDirectoryIfMissing True cache
+  if not (null args) && head args == "--no-tui"
+    then oldMain
+    else runBrick
+
+oldMain :: IO ()
+oldMain = do
+  t <- getTea
+  case t of
     Nothing   -> teaInfo >> main
     Just tea' -> teapot tea' 0
 
 teapot :: Tea -> Int -> IO ()
-teapot tea i = runStateT (runReaderT brew tea) i $> ()
+teapot tea' i = runStateT (runReaderT brew tea') i $> ()
 
 getInput :: IO String
 getInput = do
@@ -63,7 +56,7 @@ getInput = do
 mapStringToTea :: String -> Maybe Tea
 mapStringToTea ('c':'u':'s':'t':'o':'m':rest)   =
   let times = filter (/="") . splitOn " " $ rest
-   in Just . Custom ((read . head) times) $ (read . last) times
+  in Just $ Custom "" ((read . head) times) ((read . last) times)
 mapStringToTea string
      | string `elem` whites        = Just White
      | string `elem` blacks        = Just Black
@@ -77,7 +70,6 @@ mapStringToTea string
 
 brew :: TeaMonad ()
 brew = do
-  tea     <- ask
   newtime <- incTime
   liftIO $ moreTeaValidation newtime
   waitForBrew newtime
@@ -86,8 +78,8 @@ brew = do
 incTime :: TeaMonad Int
 incTime = do
   time <- get
-  tea  <- ask
-  let newtime = calcInfusion tea time
+  tea'  <- ask
+  let newtime = calcInfusion tea' time
   put (time + 1)
   return newtime
 
@@ -107,18 +99,6 @@ waitForBrew time = do
       threadDelay $ 1 * waitConstant
     -- source : https://stackoverflow.com/questions/8953636/simple-progress-indication-in-console
 
--- Linear (affine) function to map the time to brewing time
-calcInfusion :: Tea -> Int -> Int
-calcInfusion White x            = x * 10 + 20
-calcInfusion Green x            = x * 3  + 15
-calcInfusion Yellow x           = x * 5  + 15
-calcInfusion OolongStrip x      = x * 5  + 20
-calcInfusion OolongBall x       = x * 5  + 25
-calcInfusion PuerhRipe x        = x * 5  + 10
-calcInfusion PuerhStrip x       = x * 3  + 10
-calcInfusion Black x            = x * 5  + 10
-calcInfusion (Custom inf inc) x = x * inc + inf
-
 moreTeaValidation :: Int -> IO ()
 moreTeaValidation s = do
   putStrLn $ "Continue brewing for " ++ show s ++ " seconds?"
@@ -134,16 +114,16 @@ moreTeaValidation s = do
 teaInfo :: IO ()
 teaInfo =
   putStr "|The following teas are available:\n\
-          \|kind           gr/100ml  time      temp\n\
-          \|white          3.5/4gr   20/+10s    85C\n\
-          \|green          3/3.5gr   15/+3s     80C\n\
-          \|yellow         3.5/4gr   15/+5s     85C\n\
-          \|oolong_strip   4.5/5gr   20/+5s     99C\n\
-          \|oolong_ball    6/6.5gr   25/+5s     99C\n\
-          \|black          4/4.5gr   10-15/+5s  99C\n\
-          \|puerh_ripe     5gr       10/+3s     99C\n\
-          \|puerh_raw      5gr       10/+5s     99C\n\
-          \|custom         Enter first first-infusion time and then the added time per infusion.\n\
-          \|\n\
-          \|Keep in mind that those values are made for 功夫 style brewing!\n"
+         \|kind           gr/100ml  time      temp\n\
+         \|white          3.5/4gr   20/+10s    85C\n\
+         \|green          3/3.5gr   15/+3s     80C\n\
+         \|yellow         3.5/4gr   15/+5s     85C\n\
+         \|oolong_strip   4.5/5gr   20/+5s     99C\n\
+         \|oolong_ball    6/6.5gr   25/+5s     99C\n\
+         \|black          4/4.5gr   10-15/+5s  99C\n\
+         \|puerh_ripe     5gr       10/+3s     99C\n\
+         \|puerh_raw      5gr       10/+5s     99C\n\
+         \|custom         Enter first first-infusion time and then the added time per infusion.\n\
+         \|\n\
+         \|Keep in mind that those values are made for 功夫 style brewing!\n"
 

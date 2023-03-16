@@ -11,13 +11,32 @@ extra-source-files:
 
 description:         Please see the README on GitHub at <https://github.com/0xmycf/simple-teatimer#readme>
 
+ghc-options:
+  - -Wall
+
+default-extensions:
+  - TemplateHaskell
+  - OverloadedStrings
+
 dependencies:
 - base >= 4.7 && < 5
+- text
+- bytestring
+- filepath
+- directory
 - split
 - containers
 - mtl
 - process
+- brick
+- vty
+- optparse-applicative
+- aeson
+- microlens-platform
+- microlens-aeson
+- vector
 
+language: GHC2021
 library:
   source-dirs: src
 
@@ -29,6 +48,7 @@ executables:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
+    - -O2
     dependencies:
       simple-teatimer
 

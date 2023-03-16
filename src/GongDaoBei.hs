@@ -1,21 +1,39 @@
 module GongDaoBei
-  ( goodBye,
-    waitConstant,
-    whites,
-    blacks,
-    greens,
-    yellows,
-    oolongballs,
-    oolongsstrips,
-    puerhrripes,
-    puerhrstrips,
-    printR
+  ( Tea(..)
+  , calcInfusion
+  , goodBye
+  , waitConstant
+  , whites
+  , blacks
+  , greens
+  , yellows
+  , oolongballs
+  , oolongsstrips
+  , puerhrripes
+  , puerhrstrips
+  , printR
+  , pShow
+  , isCustom
   )
 where
 
-import           Data.Char   (toLower)
+import           Data.Text   (Text)
+import qualified Data.Text   as T
 import           System.Exit (exitSuccess)
-import           System.IO   (hPutStr, putStr, stderr)
+import           System.IO   (hPutStr, stderr)
+
+-- Linear (affine) function to map the time to brewing time
+calcInfusion :: Tea -> Int -> Int
+calcInfusion White x              = x * 10 + 20
+calcInfusion Green x              = x * 3  + 15
+calcInfusion Yellow x             = x * 5  + 15
+calcInfusion OolongStrip x        = x * 5  + 20
+calcInfusion OolongBall x         = x * 5  + 25
+calcInfusion PuerhRipe x          = x * 5  + 10
+calcInfusion PuerhStrip x         = x * 3  + 10
+calcInfusion Black x              = x * 5  + 10
+calcInfusion (Custom _ inf inc) x = x * inc + inf
+
 
 goodBye :: String -> IO b
 goodBye msg = do
@@ -74,4 +92,28 @@ puerhrstrips = [
           , "puerhs"
           , "puerh_strip"
           ]
+
+type BaseInfusion        = Int
+type IncreasePerInfusion = Int
+type Name                = Text
+
+data Tea
+  = White
+  | Green
+  | Yellow
+  | OolongStrip
+  | OolongBall
+  | PuerhRipe
+  | PuerhStrip
+  | Black
+  | Custom Name BaseInfusion IncreasePerInfusion
+  deriving (Eq, Show)
+
+isCustom :: Tea -> Bool
+isCustom Custom {} = True
+isCustom _         = False
+
+pShow :: Tea -> String
+pShow (Custom n b i) = unwords $ T.unpack n : map show [b, i]
+pShow t              = show t
 
